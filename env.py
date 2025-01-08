@@ -13,10 +13,12 @@ obsNum = 10
 color = ['lightblue', 'pink', 'royalblue', 'pink', 'lightblue', 'lightblue']
 
 
+
 class ENV(tk.Tk, object):
-    def __init__(self, agentNum):
+    def __init__(self, agentNum, base_speed):
         super(ENV, self).__init__()
         self.agentNum = agentNum
+        self.base_speed = base_speed  # Predetermined base speed for all agents
         self.ENV_H = ENV_H
         self.obsNum = obsNum
         self.n_actions_ts = self.agentNum
@@ -39,9 +41,6 @@ class ENV(tk.Tk, object):
         self.tar_center = np.zeros((self.agentNum, 2))
         self.obs_center = np.zeros((obsNum, 2))
         self.geometry('{0}x{1}'.format(ENV_H * UNIT, ENV_H * UNIT))
-
-        # Generate random speeds for each agent
-        self.agent_speeds = np.random.uniform(0.5, 3.5, self.agentNum)
 
         self._build_env()
 
@@ -80,6 +79,11 @@ class ENV(tk.Tk, object):
                 self.obs_center[i, 0] + self.obsSize[i], self.obs_center[i, 1] + self.obsSize[i],
                 fill='grey')
         self.canvas.pack()
+
+    def get_agent_speeds(self):
+        """Calculate the dynamic speeds using a random multiplier for each agent."""
+        random_multipliers = np.random.uniform(0.2, 1.0, self.agentNum)
+        return self.base_speed * random_multipliers
 
     def reset(self, agentPositionArray, tarPositionArray, obsArray, obsSize):
         self.update()
@@ -170,7 +174,7 @@ class ENV(tk.Tk, object):
         action = int(action)  # Convert action to an integer if it is not already
 
         # Get the agent's speed from the generated random speeds
-        speed = self.agent_speeds[action]
+        speed = self.get_agent_speeds()[action]
 
         base_actionA = np.array([0.0, 0.0])
         base_actionA[0] += np.sin(action) * self.stepLength * speed
@@ -179,7 +183,8 @@ class ENV(tk.Tk, object):
 
     def step_dqn(self, action, observation, agentiDone):
         # Get the agent's speed from the generated random speeds
-        speed = self.agent_speeds[action]
+        agent_speeds = self.get_agent_speeds()  # Call method to retrieve speeds
+        speed = agent_speeds[action]
         base_actionA = np.array([0.0, 0.0])
         if agentiDone != action + 1:
             base_actionA += observation[action*2: (action+1)*2]/np.linalg.norm(observation[action*2:(action+1)*2])*self.stepLengthFree * speed
