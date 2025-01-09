@@ -21,7 +21,7 @@ else:
     ep_num = 1000
     np.random.seed(2)
 agentNum = args.agent_num
-env = ENV(agentNum, 4) #change base speed
+env = ENV(agentNum, 3) #change base speed
 agentNum = env.agentNum
 envSize = env.ENV_H
 obsNum = env.obsNum
@@ -203,6 +203,15 @@ for ep in range(ep_num):
         observation = observation_
 
         if sum(done) or step == MAX_EP_STEPS - 1:
+            if success:
+                print(f"Episode {ep}: Success!")
+            elif collision_agent > 0:
+                print(f"Episode {ep}: Agent Collision!")
+            elif collision_obs > 0:
+                print(f"Episode {ep}: Agent collided with an obstacle!")
+            else:
+                print(f"Episode {ep}: Time out!")
+
             collision_num += collision_agent
             collision_obs_num += collision_obs
             success_num += success
