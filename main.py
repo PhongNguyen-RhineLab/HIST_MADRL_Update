@@ -21,7 +21,7 @@ else:
     ep_num = 1000
     np.random.seed(2)
 agentNum = args.agent_num
-env = ENV(agentNum, 2) #change base speed
+env = ENV(agentNum, 4) #change base speed
 agentNum = env.agentNum
 envSize = env.ENV_H
 obsNum = env.obsNum
@@ -119,7 +119,9 @@ for ep in range(ep_num):
                         break
                 tarAgentDirCoordi = tarAgentCoordi / tarAgentDis
                 # Detect obstacles
-                agentExistObstacle_Target[i], agentObstacleDis[i, 0] = env.detect_obstacle(tarAgentDirCoordi, i, otherTarCoordi[i])
+                agentExistObstacle_Target[i], agentObstacleDis[i, 0] = env.detect_obstacle(
+                    tarAgentDirCoordi, i, otherTarCoordi[i], env.agent_speeds[i]
+                )
                 if agentExistObstacle_Target[i] == 1:
                     if action[i] != action_[i] and step:
                         tarAngle[i] = math.asin(tarAgentCoordi[0] / tarAgentDis)
@@ -176,7 +178,9 @@ for ep in range(ep_num):
                         otherTarCoordi[i] = -(observation_[i, k*2:k*2+2]) * envSize
                         break
                 tarAgentDirCoordi = tarAgentCoordi / tarAgentDis
-                agentNextDDPG, agentObstacleDis[i, 0] = env.detect_obstacle(tarAgentDirCoordi, i, otherTarCoordi[i])
+                agentExistObstacle_Target[i], agentObstacleDis[i, 0] = env.detect_obstacle(
+                    tarAgentDirCoordi, i, otherTarCoordi[i], env.agent_speeds[i]
+                )
                 if agentNextDDPG == 1:
                     tarAngle[i] = math.asin(tarAgentCoordi[0] / tarAgentDis)
                     if tarAgentCoordi[1] >= 0:
