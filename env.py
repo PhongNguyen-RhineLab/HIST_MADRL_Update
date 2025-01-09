@@ -142,36 +142,52 @@ class ENV(tk.Tk, object):
                     sATAA[i, 2*(self.agentNum + j): 2*(self.agentNum + j)+2] = - sATAA[j, 2*(self.agentNum + i - 1): 2*(self.agentNum + i)]
         return sATAA
 
-    def detect_obstacle(self, tarAgentDirCoordi, i, otherTarCoordi):
+    def detect_obstacle(self, tarAgentDirCoordi, i, otherTarCoordi, agent_speed):
+        """
+        Detects obstacles in the direction of the agent, scaled by speed.
+        :param tarAgentDirCoordi: Direction vector for detection.
+        :param i: Agent index.
+        :param otherTarCoordi: Coordinates of other targets.
+        :param agent_speed: Current speed of the agent.
+        :return: obstacleExist (int), obstacleDistance (float).
+        """
         obstacleExist = 0
         obstacleDistance = 1
+        scaled_observeRange = self.observeRange * agent_speed  # Scale detection range by speed
+
         for k in range(self.observeTimes + 1):
-            observeDistance = k / self.observeTimes * self.observeRange
+            observeDistance = k / self.observeTimes * scaled_observeRange
             observeCoordi = observeDistance * tarAgentDirCoordi
-            A_coordi = self.canvas.coords(self.agent_all[i]) + UNIT * np.hstack((np.hstack(observeCoordi), np.hstack(observeCoordi)))
-            for j in range(0, obsNum+1):
-                if j < int(obsNum/2):  # Detecting square obstacles
+            A_coordi = self.canvas.coords(self.agent_all[i]) + UNIT * np.hstack(
+                (np.hstack(observeCoordi), np.hstack(observeCoordi)))
+
+            for j in range(0, obsNum + 1):
+                if j < int(obsNum / 2):  # Detecting square obstacles
                     Ob_coordi = self.canvas.coords(self.obstacle_all[j])
-                    agentNonObstacle = A_coordi[2] <= Ob_coordi[0] or A_coordi[0] >= Ob_coordi[2] or A_coordi[3] <= Ob_coordi[1] or A_coordi[1] >= Ob_coordi[3]
-                    if agentNonObstacle == 0:
+                    agentNonObstacle = A_coordi[2] <= Ob_coordi[0] or A_coordi[0] >= Ob_coordi[2] or A_coordi[3] <= \
+                                       Ob_coordi[1] or A_coordi[1] >= Ob_coordi[3]
+                    if not agentNonObstacle:
                         obstacleExist = 1
-                        obstacleDistance = observeDistance / self.observeRange
+                        obstacleDistance = observeDistance / scaled_observeRange
                         break
                 elif j < obsNum:  # Detecting round obstacles
                     Ob_coordi = self.canvas.coords(self.obstacle_all[j])
-                    agentNonObstacle = np.linalg.norm(Ob_coordi[:2]+self.obsSize[j]-A_coordi[:2]-self.agentSize) > (self.obsSize[j] + self.agentSize)
-                    if agentNonObstacle == 0:
+                    agentNonObstacle = np.linalg.norm(
+                        Ob_coordi[:2] + self.obsSize[j] - A_coordi[:2] - self.agentSize) > (
+                                                   self.obsSize[j] + self.agentSize)
+                    if not agentNonObstacle:
                         obstacleExist = 1
-                        obstacleDistance = observeDistance / self.observeRange
+                        obstacleDistance = observeDistance / scaled_observeRange
                         break
                 elif j == obsNum:  # Detecting targets
                     if np.linalg.norm(otherTarCoordi) != 0:
-                        agentNonObstacle = np.linalg.norm(otherTarCoordi + observeCoordi)*UNIT > (self.tarSize + self.agentSize)
-                        if agentNonObstacle == 0:
+                        agentNonObstacle = np.linalg.norm(otherTarCoordi + observeCoordi) * UNIT > (
+                                    self.tarSize + self.agentSize)
+                        if not agentNonObstacle:
                             obstacleExist = 1
-                            obstacleDistance = observeDistance / self.observeRange
+                            obstacleDistance = observeDistance / scaled_observeRange
                             break
-            if agentNonObstacle == 0:
+            if not agentNonObstacle:
                 break
         return obstacleExist, obstacleDistance
 
