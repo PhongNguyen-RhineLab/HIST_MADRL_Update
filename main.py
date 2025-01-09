@@ -21,7 +21,7 @@ else:
     ep_num = 1000
     np.random.seed(2)
 agentNum = args.agent_num
-env = ENV(agentNum, 4) #change base speed
+env = ENV(agentNum, 3) #change base speed
 agentNum = env.agentNum
 envSize = env.ENV_H
 obsNum = env.obsNum
