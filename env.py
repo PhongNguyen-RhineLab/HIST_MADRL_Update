@@ -15,10 +15,16 @@ color = ['lightblue', 'pink', 'royalblue', 'pink', 'lightblue', 'lightblue']
 
 
 class ENV(tk.Tk, object):
+    def _initialize_speeds(self):
+        """Initialize random speeds for all agents."""
+        random_multipliers = np.random.uniform(0.2, 1.0, self.agentNum)
+        return self.base_speed * random_multipliers
+
     def __init__(self, agentNum, base_speed):
         super(ENV, self).__init__()
         self.agentNum = agentNum
-        self.base_speed = base_speed  # Predetermined base speed for all agents
+        self.base_speed = base_speed
+        self.agent_speeds = self._initialize_speeds()
         self.ENV_H = ENV_H
         self.obsNum = obsNum
         self.n_actions_ts = self.agentNum
@@ -170,12 +176,8 @@ class ENV(tk.Tk, object):
         return obstacleExist, obstacleDistance
 
     def step_ddpg(self, action):
-        # Ensure action is an integer index
-        action = int(action)  # Convert action to an integer if it is not already
-
-        # Get the agent's speed from the generated random speeds
-        speed = self.get_agent_speeds()[action]
-
+        action = int(action)
+        speed = self.agent_speeds[action]  # Use fixed speed
         base_actionA = np.array([0.0, 0.0])
         base_actionA[0] += np.sin(action) * self.stepLength * speed
         base_actionA[1] -= np.cos(action) * self.stepLength * speed
