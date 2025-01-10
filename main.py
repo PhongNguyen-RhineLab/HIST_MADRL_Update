@@ -30,8 +30,8 @@ MAX_EP_STEPS = envSize * 3
 envSize_ = envSize - 0.99
 historyStep = env.historyStep
 s_dim_dqn = env.n_states_ts
-s_dim_ddpg = env.n_states_ca + 2   
-s_dim = s_dim_dqn + env.n_states_ca  
+s_dim_ddpg = env.n_states_ca + 2
+s_dim = s_dim_dqn + env.n_states_ca
 n_actions = env.n_actions_ts
 a_dim = env.n_actions_ca
 a_bound = env.max_torque
@@ -201,7 +201,6 @@ for ep in range(ep_num):
                 RL.store_transition_ddpg(observationCA[i], action_ddpg[i], reward[i], observation_All, action_[i], done[i], agentNextDDPG)
         observation_h = observation_h_temp
         observation = observation_
-
         if sum(done) or step == MAX_EP_STEPS - 1:
             if success:
                 print(f"Episode {ep}: Success!")
