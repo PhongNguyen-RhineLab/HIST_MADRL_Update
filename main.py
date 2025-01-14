@@ -100,6 +100,7 @@ for ep in range(ep_num):
     observation_h = np.tile(observation[:, -(agentNum - 1) * 2:], historyStep)
     observation_h_temp = observation_h
     collision_cross = np.zeros(agentNum)
+    previous_action = np.zeros(agentNum)  # Initialize previous actions
 
     for step in range(MAX_EP_STEPS):
         env.render()
@@ -138,10 +139,11 @@ for ep in range(ep_num):
                             tarAngleAround = tarAngle[i] - (interval+1) * np.pi / 6
                             tarAngleAround_PolarCoordi = np.array([np.sin(tarAngleAround), -np.cos(tarAngleAround)])
                             temp, agentObstacleDis[i, interval + 4] = env.detect_obstacle(tarAngleAround_PolarCoordi, i, otherTarCoordi[i])
-                    observationCA[i] = np.hstack((observation[i, action[i]*2: action[i]*2+2], agentObstacleDis[i]))
                     action_ddpg[i] = RL.choose_action_ddpg(observationCA[i])
                     actionMove = tarAngle[i] + action_ddpg[i]
-                    move[i, 0], move[i, 1] = env.step_ddpg(actionMove)
+                    move[i, 0], move[i, 1] = env.step_ddpg(actionMove, previous_action[i])
+                    previous_action[i] = actionMove  # Update for the next step
+                    print(f"Agent {i}: ActionMove = {actionMove}, PreviousAction = {previous_action[i]}")
                 else:  # No obstacles ahead
                     move[i, 0], move[i, 1] = env.step_dqn(action[i], observation[i], agentDone[i])
             else:  # Arrive

@@ -191,12 +191,42 @@ class ENV(tk.Tk, object):
                 break
         return obstacleExist, obstacleDistance
 
-    def step_ddpg(self, action):
+    def step_ddpg(self, action, previous_action):
+        """
+        Modify agent's movement step with distance penalty based on direction change.
+        :param action: Current direction (angle in degrees).
+        :param previous_action: Previous direction (angle in degrees).
+        :return: New movement step (dx, dy).
+        """
         action = int(action)
-        speed = self.agent_speeds[action]  # Use fixed speed
+        previous_action = int(previous_action)
+
+        # Calculate the angle change
+        angle_change = abs(action - previous_action) % 360
+        if angle_change > 180:  # Adjust for angles > 180
+            angle_change = 360 - angle_change
+
+        # Determine scaling factor based on angle ranges
+        if angle_change <= 15:
+            scaling_factor = 0  # No penalty
+        elif angle_change <= 30:
+            scaling_factor = 0.2 # 20% penalty
+        elif angle_change <= 45:
+            scaling_factor = 0.4  # 40% penalty
+        elif angle_change <= 60:
+            scaling_factor = 0.6  # 60% penalty
+        elif angle_change <= 75:
+            scaling_factor = 0.8  # 80% penalty
+        else:
+            scaling_factor = 1  # No movement beyond 90 degrees (optional)
+
+        # Compute movement step
+        speed = self.agent_speeds[action]  # Use agent's speed
+        turning_penalty = 0.2
+        distance_scale = 1 - (turning_penalty * scaling_factor)
         base_actionA = np.array([0.0, 0.0])
-        base_actionA[0] += np.sin(action) * self.stepLength * speed
-        base_actionA[1] -= np.cos(action) * self.stepLength * speed
+        base_actionA[0] += np.sin(np.radians(action)) * self.stepLength * speed * distance_scale
+        base_actionA[1] -= np.cos(np.radians(action)) * self.stepLength * speed * distance_scale
         return base_actionA[0], base_actionA[1]
 
     def step_dqn(self, action, observation, agentiDone):
