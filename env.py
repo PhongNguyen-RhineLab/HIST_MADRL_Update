@@ -36,6 +36,7 @@ class ENV(tk.Tk, object):
         self.stepLength = UNIT * 0.5
         self.stepLengthFree = UNIT * 1
         self.observeRange = 4  # detection radius
+        self.detection_all = [None] * self.agentNum  # Store detection radius visuals
         self.observeTimes = 400
         self.agent_all = [None] * self.agentNum
         self.target_all = [None] * self.agentNum
@@ -52,8 +53,8 @@ class ENV(tk.Tk, object):
 
     def _build_env(self):
         self.canvas = tk.Canvas(self, bg='white',
-                                height=(ENV_H+2) * UNIT,
-                                width=(ENV_H+2) * UNIT)
+                                height=(ENV_H + 2) * UNIT,
+                                width=(ENV_H + 2) * UNIT)
         for c in range(0, ENV_W * UNIT, UNIT):
             x0, y0, x1, y1 = c, 0, c, ENV_H * UNIT
             self.canvas.create_line(x0, y0, x1, y1)
@@ -61,6 +62,7 @@ class ENV(tk.Tk, object):
             x0, y0, x1, y1 = 0, r, ENV_H * UNIT, r
             self.canvas.create_line(x0, y0, x1, y1)
         self.origin = np.array([halfUnit, halfUnit])
+
         for i in range(self.agentNum):
             self.tar_center[i] = self.origin + UNIT * np.random.rand(2) * (ENV_H - 1 + 0.01)
             self.agent_center[i] = self.origin + UNIT * np.random.rand(2) * (ENV_H - 1 + 0.01)
@@ -72,14 +74,22 @@ class ENV(tk.Tk, object):
                 self.tar_center[i, 0] - self.tarSize, self.tar_center[i, 1] - self.tarSize,
                 self.tar_center[i, 0] + self.tarSize, self.tar_center[i, 1] + self.tarSize,
                 fill='red')
-        for i in range(int(obsNum/2)):  # Square obstacles
-            self.obs_center[i] = self.origin + UNIT * np.random.rand(2) * (ENV_H/2)
+            # Create detection range circle
+            self.detection_all[i] = self.canvas.create_oval(
+                self.agent_center[i, 0] - self.observeRange * UNIT,
+                self.agent_center[i, 1] - self.observeRange * UNIT,
+                self.agent_center[i, 0] + self.observeRange * UNIT,
+                self.agent_center[i, 1] + self.observeRange * UNIT,
+                outline='green')
+
+        for i in range(int(obsNum / 2)):  # Square obstacles
+            self.obs_center[i] = self.origin + UNIT * np.random.rand(2) * (ENV_H / 2)
             self.obstacle_all[i] = self.canvas.create_rectangle(
                 self.obs_center[i, 0] - self.obsSize[i], self.obs_center[i, 1] - self.obsSize[i],
                 self.obs_center[i, 0] + self.obsSize[i], self.obs_center[i, 1] + self.obsSize[i],
                 fill='grey')
-        for i in range(int(obsNum/2), obsNum):  # Round obstacles
-            self.obs_center[i] = self.origin + UNIT * np.random.rand(2) * (ENV_H/2)
+        for i in range(int(obsNum / 2), obsNum):  # Round obstacles
+            self.obs_center[i] = self.origin + UNIT * np.random.rand(2) * (ENV_H / 2)
             self.obstacle_all[i] = self.canvas.create_oval(
                 self.obs_center[i, 0] - self.obsSize[i], self.obs_center[i, 1] - self.obsSize[i],
                 self.obs_center[i, 0] + self.obsSize[i], self.obs_center[i, 1] + self.obsSize[i],
@@ -218,11 +228,11 @@ class ENV(tk.Tk, object):
         elif angle_change <= 75:
             scaling_factor = 0.8  # 80% penalty
         else:
-            scaling_factor = 1  # No movement beyond 90 degrees (optional)
+            scaling_factor = 1  # max penalty when greater than 75 degree
 
         # Compute movement step
         speed = self.agent_speeds[action]  # Use agent's speed
-        turning_penalty = 0.2
+        turning_penalty = 0.2 # max amount of turning penalty (percentage of the base distant travel) (min 0, max 1)
         distance_scale = 1 - (turning_penalty * scaling_factor)
         base_actionA = np.array([0.0, 0.0])
         base_actionA[0] += np.sin(np.radians(action)) * self.stepLength * speed * distance_scale
@@ -268,7 +278,29 @@ class ENV(tk.Tk, object):
 
         # Agents move
         for i in range(self.agentNum):
+            # Calculate agent speed (Euclidean distance of movement)
+            speed = self.get_agent_speeds()[i]  # Assuming this returns a list of speeds
+
+            # Adjust detection range based on agent's speed
+            self.observeRange = speed
+
+            # Move agents
             self.canvas.move(self.agent_all[i], move[i, 0], move[i, 1])
+
+            # Update detection range
+            new_coords = self.canvas.coords(self.agent_all[i])
+            x_center = (new_coords[0] + new_coords[2]) / 2
+            y_center = (new_coords[1] + new_coords[3]) / 2
+
+            # Update detection radius
+            self.canvas.coords(
+                self.detection_all[i],
+                x_center - self.observeRange * UNIT,
+                y_center - self.observeRange * UNIT,
+                x_center + self.observeRange * UNIT,
+                y_center + self.observeRange * UNIT
+            )
+
         nextDisAT = np.zeros(self.agentNum)
         for i in range(self.agentNum):
             agent_coordi[i] = np.array(self.canvas.coords(self.agent_all[i])[:2]) + np.array([self.agentSize, self.agentSize])

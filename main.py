@@ -143,9 +143,12 @@ for ep in range(ep_num):
                     actionMove = tarAngle[i] + action_ddpg[i]
                     move[i, 0], move[i, 1] = env.step_ddpg(actionMove, previous_action[i])
                     previous_action[i] = actionMove  # Update for the next step
-                    print(f"Agent {i}: ActionMove = {actionMove}, PreviousAction = {previous_action[i]}")
+                    # print(f"Agent {i}: ActionMove = {actionMove}, PreviousAction = {previous_action[i]}") #console debug
                 else:  # No obstacles ahead
+                    actionMove = tarAngle[i] + action_ddpg[i]
                     move[i, 0], move[i, 1] = env.step_dqn(action[i], observation[i], agentDone[i])
+                    previous_action[i] = actionMove  # Update for the next step
+                    # print(f"Agent {i}: ActionMove = {actionMove}, PreviousAction = {previous_action[i]}") #console debug
             else:  # Arrive
                 move[i, 0], move[i, 1] = env.step_dqn(action[i], observation[i], agentDone[i])
 
