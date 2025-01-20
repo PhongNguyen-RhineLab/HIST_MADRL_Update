@@ -5,6 +5,13 @@ from env import ENV
 from algo import HIST_Alg
 import os
 import argparse
+import csv
+
+# List to store episode results
+results = []
+
+# Define the CSV file path in the 'result' folder
+csv_file_path = os.path.join('./result', "results.csv")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--agent_num", type=int, default=0)
@@ -209,12 +216,30 @@ for ep in range(ep_num):
         if sum(done) or step == MAX_EP_STEPS - 1:
             if success:
                 print(f"Episode {ep}: Success!")
+                status = "Success"
             elif collision_agent > 0:
                 print(f"Episode {ep}: Agent Collision!")
+                status = "Agent Collision"
             elif collision_obs > 0:
                 print(f"Episode {ep}: Agent collided with an obstacle!")
+                status = "Obstacle Collision"
             else:
                 print(f"Episode {ep}: Time out!")
+                status = "Timeout"
+
+            # Calculate runtime for the episode
+            ep_runtime = time.time() - timeStart
+
+            # Append episode results to the list
+            results.append({
+                "episode": ep,
+                "status": status,
+                "runtime": round(ep_runtime, 2),
+                "reward": round(min(ep_reward), 3),
+                "collisions_agent": collision_agent,
+                "collisions_obs": collision_obs,
+                "success": success
+            })
 
             collision_num += collision_agent
             collision_obs_num += collision_obs
@@ -246,6 +271,13 @@ for ep in range(ep_num):
     elif episode == ep_num:
         print(f" ~~~~~~~  Statistical result Ep {episode} ~~~~~~~~")
         print(f"Success: {success_num}, Collision: {collision_num}, Normalized time: {np.around(timeCostSum_temp/ep_num/MAX_EP_STEPS, decimals=3)}")
+
+with open(csv_file_path, mode="w", newline="") as file:
+    writer = csv.DictWriter(file, fieldnames=["episode", "status", "runtime", "reward", "collisions_agent", "collisions_obs", "success"])
+    writer.writeheader()
+    writer.writerows(results)
+
+print(f"Results saved to {csv_file_path}")
 
 if mode == 'train':
     RL.save_Parameters()
